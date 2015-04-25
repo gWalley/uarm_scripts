@@ -326,7 +326,7 @@ class WAIT_FOR_POSE(State):
         super(WAIT_FOR_POSE, self).__init__(FSM, Arm)
 
     def Enter(self):
-        rospy.loginfo("Entering WAIT For Obj State")
+        rospy.loginfo("Entering WAIT_FOR_POSE State")
         self.Arm.GripPub(0)
 
     def Execute(self):
@@ -335,7 +335,7 @@ class WAIT_FOR_POSE(State):
             self.FSM.ToTransition("toWAIT_FOR_BASE")
 
     def Exit(self):
-        rospy.loginfo("Exiting Search Obj State")
+        rospy.loginfo("Exiting WAIT_FOR_POSE State")
         self.Arm.GripDetPub()
 
     def ReturnName(self):
@@ -355,7 +355,7 @@ class WAIT_FOR_BASE(State):
         super(WAIT_FOR_BASE, self).__init__(FSM, Arm)
 
     def Enter(Self):
-        rospy.loginfo("Entering WAIT For Base State")
+        rospy.loginfo("Entering WAIT_FOR_BASE State")
 
     def Execute(self):
         self.Arm.GripDetPub()
@@ -363,7 +363,7 @@ class WAIT_FOR_BASE(State):
             self.FSM.ToTransition("toSEARCH_OBJ")
 
     def Exit(self):
-        rospy.loginfo("Exiting WAIT For Base State")
+        rospy.loginfo("Exiting WAIT_FOR_BASE State")
 
     def ReturnName(self):
         return "WAIT_FOR_BASE"
@@ -541,7 +541,7 @@ class PICK_UP(State):
         super(PICK_UP, self).__init__(FSM, Arm)
 
     def Enter(self):
-        rospy.loginfo("Entering Pick Up State")
+        rospy.loginfo("Entering PICK_UP State")
 
     def Execute(self):
         if self.Arm.AtTarget(HOME) is True:
@@ -550,7 +550,7 @@ class PICK_UP(State):
             self.Arm.Move(HOME, 0.1)
 
     def Exit(self):
-        rospy.loginfo("Exiting Pick Up State")
+        rospy.loginfo("Exiting PICK_UP State")
 
     def ReturnName(self):
         return "PICK_UP"
@@ -569,7 +569,7 @@ class LOCATE_BIN(State):
         super(LOCATE_BIN, self).__init__(FSM, Arm)
 
     def Enter(self):
-        rospy.loginfo("Entering Locate Bin State")
+        rospy.loginfo("Entering LOCATE_BIN State")
 
     def Execute(self):
         if self.Arm.AtTarget(SEARCH) is False:
@@ -578,7 +578,7 @@ class LOCATE_BIN(State):
             self.FSM.ToTransition("toALIGN_BIN")
 
     def Exit(self):
-        rospy.loginfo("Exiting Locate Bin State")
+        rospy.loginfo("Exiting LOCATE_BIN State")
 
     def ReturnName(self):
         return "LOCATE_BIN"
@@ -597,7 +597,7 @@ class ALIGN_BIN(State):
         super(ALIGN_BIN, self).__init__(FSM, Arm)
 
     def Enter(self):
-        rospy.loginfo("Entering ALIGN To Bin State")
+        rospy.loginfo("Entering ALIGN_BIN State")
 
     def Execute(self):
         if self.Arm.BlueBlobsSeen() is True:
@@ -609,7 +609,7 @@ class ALIGN_BIN(State):
 
     def Exit(self):
         self.Arm.GripPub(0)
-        rospy.loginfo("Exiting ALIGN To Bin State")
+        rospy.loginfo("Exiting ALIGN_BIN State")
 
     def ReturnName(self):
         return "ALIGN_BIN"
