@@ -456,10 +456,10 @@ class PICK_UP(State):
         rospy.loginfo("Entering PICK_UP State")
 
     def Execute(self):
-        if self.Arm.AtTarget(HOME) is True:
+        if self.Arm.AtTarget(SEARCH) is True:
             self.FSM.ToTransition("to_WAIT")
         else:
-            self.Arm.Move(HOME, 0.1)
+            self.Arm.Move(SEARCH, 0.1)
 
     def Exit(self):
         rospy.loginfo("Exiting PICK_UP State")

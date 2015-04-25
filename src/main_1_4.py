@@ -30,6 +30,7 @@ if __name__ == "__main__":
         fsm.AddState("PICK_UP", PICK_UP(fsm, rArm))
         fsm.AddState("LOCATE_BIN", LOCATE_BIN(fsm, rArm))
         fsm.AddState("ALIGN_BIN", ALIGN_BIN(fsm, rArm))
+        fsm.AddState("DROPPED", DROPPED(fsm, rArm))
 
         # STATE TRANSITION Initialisation
         fsm.AddTransition("to_IDLE", Transition("IDLE"))
@@ -41,6 +42,7 @@ if __name__ == "__main__":
         fsm.AddTransition("to_PICK_UP", Transition("PICK_UP"))
         fsm.AddTransition("to_LOCATE_BIN", Transition("LOCATE_BIN"))
         fsm.AddTransition("to_ALIGN_BIN", Transition("ALIGN_BIN"))
+        fsm.AddTransition("to_DROPPED", Transition("DROPPED"))
 
         fsm.SetState("IDLE")
         fsm.ToTransition("to_IDLE")
