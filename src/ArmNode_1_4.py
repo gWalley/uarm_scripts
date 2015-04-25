@@ -14,7 +14,7 @@ CAM = [150, 120]
 XI = 0.005
 YI = -0.02
 IDLE_POSE = [0.0, 0.0, 90.0, 0.0]
-HOME = [100.0, 150.0, 0.0, 0.0]
+HOME = [0.0, 0.0, 0.0, 0.0]
 SEARCH = [100.0, 150.0, 0.0, 0.0]
 MAX_JOINTS = [210, 150, 90, 90]
 MIN_JOINTS = [0, -150, -90, -90]
@@ -515,7 +515,7 @@ class ALIGN_BIN(State):
         if self.Arm.BlueBlobsSeen() is True:
             self.Arm.Error("BLUE", "BIN")
             if self.Arm.CenterOnBlob("BLUE") is True:
-                self.FSM.ToTransition("to_IDLE")
+                self.FSM.ToTransition("to_DROPPED")
         else:
             self.Arm.UpdatePosition([0, 0, -2, 0])
 
@@ -525,3 +525,31 @@ class ALIGN_BIN(State):
 
     def ReturnName(self):
         return "ALIGN_BIN"
+
+
+# ---------------------------------------------------------------
+# State:
+# ---------------------------------------------------------------
+# PrevState:
+# NextState:
+# ---------------------------------------------------------------
+#
+class DROPPED(State):
+
+    def __init__(self, FSM, Arm):
+        super(DROPPED, self).__init__(FSM, Arm)
+
+    def Enter(self):
+        rospy.loginfo("Entering DROPPED State")
+        rospy.sleep(1)
+
+    def Execute(self):
+        if self.Arm.AtTarget(HOME) is True:
+            self.Arm.Move(HOME, 0.1)
+
+    def Exit(self):
+        rospy.loginfo("Exiting DROPPED State")
+        self.Arm.GripDetPub()
+
+    def ReturnName(self):
+        return "DROPPED"
