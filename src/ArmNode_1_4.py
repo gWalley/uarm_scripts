@@ -546,6 +546,8 @@ class DROPPED(State):
     def Execute(self):
         if self.Arm.AtTarget(HOME) is True:
             self.Arm.Move(HOME, 0.1)
+        if self.Arm.ServerState() == "BIN_TO_BASE":
+            self.fsm.ToTransition("to_IDLE")
 
     def Exit(self):
         rospy.loginfo("Exiting DROPPED State")
