@@ -198,12 +198,11 @@ class ArmNode():
 
     # Callbacks for subscriptions
     def B4CB(self, b4):
-        if b4.data is True:
-            self.FSM.ToTransition("toSEARCH_OBJ")
+        pass
 
     def B7CB(self, b7):
         if b7.data is True:
-            self.FSM.ToTransition("toIDLE")
+            self.FSM.ToTransition("to_IDLE")
 
     def LimitSwCB(self, ls):
         self.limitSw = ls.data
@@ -213,7 +212,7 @@ class ArmNode():
         # Reset to IDLE
         CS = self.FSM.curState.ReturnName()
         if(self.serverState == "IDLE" and CS != "IDLE"):
-            self.FSM.ToTransition("toIDLE")
+            self.FSM.ToTransition("to_IDLE")
 
     def BaseStateCB(self, state):
         if state.data != self.baseState:
@@ -256,28 +255,6 @@ def clamp_p_or_n(n, minN, maxN):
 
 
 # ---------------------------------------------------------------
-# State: START_STATE
-# ---------------------------------------------------------------
-# PrevState: N/A
-# NextState:
-# ---------------------------------------------------------------
-#
-class START_STATE(State):
-
-    def __init__(self, FSM, Arm):
-        super(START_STATE, self).__init__(FSM, Arm)
-
-    def Enter(self):
-        pass
-
-    def Execute(self):
-        self.FSM.ToTransition("toIDLE")
-
-    def Exit(self):
-        pass
-
-
-# ---------------------------------------------------------------
 # State: IDLE
 # ---------------------------------------------------------------
 # PrevState: N/A
@@ -300,7 +277,7 @@ class IDLE(State):
             self.Arm.Move(IDLE_POSE, 0.1)
 
         if self.Arm.ServerState() == "START":
-            self.FSM.ToTransition("toWAIT_FOR_BASE")
+            self.FSM.ToTransition("to_WAIT_FOR_BASE")
         # self.FSM.ToTransition("toSEARCH_OBJ")
 
         if rospy.get_time() > self.EntryTime + 1:
@@ -311,33 +288,6 @@ class IDLE(State):
 
     def ReturnName(self):
         return "IDLE"
-
-
-# ---------------------------------------------------------------
-# State: WAIT_FOR_BASE
-# ---------------------------------------------------------------
-# PrevState: IDLE
-# NextState: SEARCH_OBJ
-# ---------------------------------------------------------------
-#
-class WAIT_FOR_BASE(State):
-
-    def __init__(self, FSM, Arm):
-        super(WAIT_FOR_BASE, self).__init__(FSM, Arm)
-
-    def Enter(Self):
-        rospy.loginfo("Entering WAIT_FOR_BASE State")
-        self.Arm.GripDetPub()
-
-    def Execute(self):
-        if self.Arm.BaseState() == "FSM_WAIT_FOR_ACTION":
-            self.FSM.ToTransition("toSEARCH_OBJ")
-
-    def Exit(self):
-        rospy.loginfo("Exiting WAIT_FOR_BASE State")
-
-    def ReturnName(self):
-        return "WAIT_FOR_BASE"
 
 
 # ---------------------------------------------------------------
@@ -356,18 +306,14 @@ class SEARCH_OBJ(State):
 
     def Enter(self):
         rospy.loginfo("Entering SEARCH_OBJ State")
-        self.search = False
         self.Arm.GripDetPub()
 
     def Execute(self):
-        if (self.Arm.AtTarget(SEARCH) is False) and (self.search is False):
+        if self.Arm.AtTarget(SEARCH) is False:
             self.Arm.Move(SEARCH, 0.1)
-        else:
-            self.search = True
 
-        if (self.Arm.PinkBlobsSeen() is True) and (self.search is True):
-            self.FSM.ToTransition("toALIGN_CAMERA")
-            # self.FSM.ToTransition("toALIGN")
+        elif self.Arm.PinkBlobsSeen() is True:
+            self.FSM.ToTransition("to_ALIGN_CAMERA")
 
     def Exit(self):
         rospy.loginfo("Exiting SEARCH_OBJ State")
@@ -394,10 +340,10 @@ class ALIGN_CAMERA(State):
         self.Arm.GripDetPub()
 
     def Execute(self):
-        if self.Arm.PinkBlobsSeen() is True:
-            self.Arm.Error("PINK", "CAM")
-            if self.Arm.CenterOnBlob("PINK") == 1:
-                self.FSM.ToTransition("toWAIT")
+        # if self.Arm.PinkBlobsSeen() is True:
+        self.Arm.Error("PINK", "CAM")
+        if self.Arm.CenterOnBlob("PINK") is True:
+            self.FSM.ToTransition("to_WAIT")
 
     def Exit(self):
         rospy.loginfo("Exiting ALIGN_CAMERA State")
@@ -424,9 +370,9 @@ class WAIT(State):
 
     def Execute(self):
         if self.Arm.ServerState() == "BIN_AT_ARM":
-            self.FSM.ToTransition("toALIGN")
-        if self.Arm.ServerState() == "ARM_DROPPING":
-            self.FSM.ToTransition("toLOCATE_BIN")
+            self.FSM.ToTransition("to_ALIGN_BLOCK")
+        elif self.Arm.ServerState() == "ARM_DROPPING":
+            self.FSM.ToTransition("to_LOCATE_BIN")
 
     def Exit(self):
         rospy.loginfo("Exiting WAIT State")
@@ -436,32 +382,32 @@ class WAIT(State):
 
 
 # ---------------------------------------------------------------
-# State: ALIGN
+# State: ALIGN_BLOCK
 # ---------------------------------------------------------------
 # PrevState: WAIT
 # NextState: APPROACH
 # ---------------------------------------------------------------
 #
-class ALIGN(State):
+class ALIGN_BLOCK(State):
 
     def __init__(self, FSM, Arm):
-        super(ALIGN, self).__init__(FSM, Arm)
+        super(ALIGN_BLOCK, self).__init__(FSM, Arm)
 
     def Enter(self):
-        rospy.loginfo("Entering ALIGN State")
+        rospy.loginfo("Entering ALIGN_BLOCK State")
         self.Arm.GripDetPub()
 
     def Execute(self):
-        if self.Arm.PinkBlobsSeen() is True:
-            self.Arm.Error("PINK", "BLOCK")
-            if self.Arm.CenterOnBlob("PINK") == 1:
-                self.FSM.ToTransition("toAPPROACH")
+        # if self.Arm.PinkBlobsSeen() is True:
+        self.Arm.Error("PINK", "BLOCK")
+        if self.Arm.CenterOnBlob("PINK") is True:
+            self.FSM.ToTransition("to_APPROACH")
 
     def Exit(self):
-        rospy.loginfo("Exiting ALIGN State")
+        rospy.loginfo("Exiting ALIGN_BLOCK State")
 
     def ReturnName(self):
-        return "ALIGN"
+        return "ALIGN_BLOCK"
 
 
 # ---------------------------------------------------------------
@@ -486,7 +432,7 @@ class APPROACH(State):
         if self.Arm.LimitSw() is True:
             self.Arm.GripPub(1)
             rospy.sleep(0.5)
-            self.FSM.ToTransition("toPICK_UP")
+            self.FSM.ToTransition("to_PICK_UP")
 
     def Exit(self):
         rospy.loginfo("Exiting APPROACH State")
@@ -512,7 +458,7 @@ class PICK_UP(State):
 
     def Execute(self):
         if self.Arm.AtTarget(HOME) is True:
-            self.FSM.ToTransition("toWAIT")
+            self.FSM.ToTransition("to_WAIT")
         else:
             self.Arm.Move(HOME, 0.1)
 
@@ -542,7 +488,7 @@ class LOCATE_BIN(State):
         if self.Arm.AtTarget(SEARCH) is False:
             self.Arm.Move(SEARCH, 0.1)
         elif self.Arm.BlueBlobsSeen() is True:
-            self.FSM.ToTransition("toALIGN_BIN")
+            self.FSM.ToTransition("to_ALIGN_BIN")
 
     def Exit(self):
         rospy.loginfo("Exiting LOCATE_BIN State")
@@ -569,40 +515,14 @@ class ALIGN_BIN(State):
     def Execute(self):
         if self.Arm.BlueBlobsSeen() is True:
             self.Arm.Error("BLUE", "BIN")
-            if self.Arm.CenterOnBlob("BLUE") == 1:
-                self.FSM.ToTransition("toDROPPED")
+            if self.Arm.CenterOnBlob("BLUE") is True:
+                self.FSM.ToTransition("to_IDLE")
         else:
             self.Arm.UpdatePosition([0, 0, -2, 0])
 
     def Exit(self):
-        self.Arm.GripPub(0)
+        rospy.sleep(0.5)
         rospy.loginfo("Exiting ALIGN_BIN State")
 
     def ReturnName(self):
         return "ALIGN_BIN"
-
-
-# ---------------------------------------------------------------
-# State:
-# ---------------------------------------------------------------
-# PrevState:
-# NextState:
-# ---------------------------------------------------------------
-#
-class DROPPED(State):
-
-    def __init__(self, FSM, Arm):
-        super(DROPPED, self).__init__(FSM, Arm)
-
-    def Enter(self):
-        rospy.loginfo("Entering DROPPED State")
-
-    def Execute(self):
-        pass
-
-    def Exit(self):
-        rospy.loginfo("Exiting DROPPED State")
-        self.Arm.GripDetPub()
-
-    def ReturnName(self):
-        return "DROPPED"
