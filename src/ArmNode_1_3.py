@@ -13,7 +13,7 @@ BIN = [200, 100]
 CAM = [150, 120]
 XI = 0.005
 YI = -0.02
-IDLE = [0.0, 0.0, 90.0, 0.0]
+IDLE_POSE = [0.0, 0.0, 90.0, 0.0]
 HOME = [100.0, 150.0, 0.0, 0.0]
 SEARCH = [100.0, 150.0, 0.0, 0.0]
 MAX_JOINTS = [210, 150, 90, 90]
@@ -296,8 +296,8 @@ class IDLE(State):
         self.Arm.GripPub(0)
 
     def Execute(self):
-        if self.Arm.AtTarget(IDLE) == 0:
-            self.Arm.Move(IDLE, 0.1)
+        if self.Arm.AtTarget(IDLE_POSE) == 0:
+            self.Arm.Move(IDLE_POSE, 0.1)
 
         if self.Arm.ServerState() == "START":
             self.FSM.ToTransition("toWAIT_FOR_POSE")
