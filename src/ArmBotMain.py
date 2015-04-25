@@ -49,7 +49,8 @@ if __name__ == "__main__":
         fsm.AddTransition("toALIGN_BIN", Transition("ALIGN_BIN"))
         fsm.AddTransition("toDROPPED", Transition("DROPPED"))
 
-        fsm.SetState("START_STATE")
+        fsm.ToTransition("toIDLE")
+        # fsm.SetState("START_STATE")
         rospy.loginfo("Initialising ArmNode")
 
         r = rospy.Rate(RATE)
