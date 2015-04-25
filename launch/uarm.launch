@@ -27,7 +27,7 @@
   <!-- Color bandwidth: Bigger = smoother image-->
   <param name="cmvision/color_radius_pix" type="double" value="40.0"/>
 
-  <node name="cmvision_uarm" pkg="cmvision_uarm" type="cmvision" args="image:=/usb_cam/image_raw"
+  <node name="cmvision_uarm" pkg="cmvision_uarm" type="cmvision_uarm" args="image:=/usb_cam/image_raw"
         output="screen" />
   
   <node pkg="rosserial_python" type="serial_node.py" name="serial_node">

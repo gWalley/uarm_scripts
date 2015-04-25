@@ -106,10 +106,10 @@ class ArmNode():
     # Centers on target location according to current error value
     def CenterOnBlob(self, name):
         inc = [0.0, 0.0, 0.0, 0.0]
-        if name == "Blue":
+        if name == "BLUE":
             flag = self.BlueBlobsSeen()
             lim = [14, 10]
-        elif name == "Pink":
+        elif name == "PINK":
             flag = self.PinkBlobsSeen()
             lim = [7, 5]
 
@@ -136,14 +136,14 @@ class ArmNode():
     # Determines if a pink blob is seen
     def PinkBlobsSeen(self):
         for i in range(len(self.blobName)):
-            if self.blobName[i] == "Pink" and self.blobAreas[i] > 1000:
+            if self.blobName[i] == "PINK" and self.blobAreas[i] > 1000:
                 return True
         return False
 
     # Determines if a blue blob is seen
     def BlueBlobsSeen(self):
         for i in range(len(self.blobName)):
-            if self.blobName[i] == "Blue" and self.blobAreas[i] > 1000:
+            if self.blobName[i] == "BLUE" and self.blobAreas[i] > 1000:
                 return True
         return False
 
@@ -298,8 +298,7 @@ class IDLE(State):
     def Execute(self):
         if self.Arm.AtTarget(IDLE) == 0:
             self.Arm.Move(IDLE, 0.1)
-        # else:
-        #     self.FSM.ToTransition("toWAIT_FOR_BASE")
+
         if self.Arm.ServerState() == "START":
             self.FSM.ToTransition("toWAIT_FOR_POSE")
         # self.FSM.ToTransition("toSEARCH_OBJ")
@@ -385,7 +384,7 @@ class SEARCH_OBJ(State):
         self.flag = False
 
     def Enter(self):
-        rospy.loginfo("Entering Search Obj State")
+        rospy.loginfo("Entering SEARCH_OBJ State")
         self.flag = False
 
     def Execute(self):
@@ -401,7 +400,7 @@ class SEARCH_OBJ(State):
             # self.FSM.ToTransition("toALIGN")
 
     def Exit(self):
-        rospy.loginfo("Exiting Search Obj State")
+        rospy.loginfo("Exiting SEARCH_OBJ State")
 
     def ReturnName(self):
         return "SEARCH_OBJ"
@@ -421,17 +420,17 @@ class ALIGN_CAMERA(State):
         super(ALIGN_CAMERA, self).__init__(FSM, Arm)
 
     def Enter(self):
-        rospy.loginfo("Entering ALIGN Camera State")
+        rospy.loginfo("Entering ALIGN_CAMERA State")
 
     def Execute(self):
         self.Arm.GripDetPub()
         if self.Arm.PinkBlobsSeen() is True:
-            self.Arm.Error("Pink", "CAM")
-            if self.Arm.CenterOnBlob("Pink") == 1:
+            self.Arm.Error("PINK", "CAM")
+            if self.Arm.CenterOnBlob("PINK") == 1:
                 self.FSM.ToTransition("toWAIT")
 
     def Exit(self):
-        rospy.loginfo("Exiting ALIGN Camera State")
+        rospy.loginfo("Exiting ALIGN_CAMERA State")
 
     def ReturnName(self):
         return "ALIGN_CAMERA"
@@ -484,8 +483,8 @@ class ALIGN(State):
     def Execute(self):
         self.Arm.GripDetPub()
         if self.Arm.PinkBlobsSeen() is True:
-            self.Arm.Error('Pink', 'BLOCK')
-            if self.Arm.CenterOnBlob("Pink") == 1:
+            self.Arm.Error("PINK", "BLOCK")
+            if self.Arm.CenterOnBlob("PINK") == 1:
                 self.FSM.ToTransition("toAPPROACH")
 
     def Exit(self):
@@ -602,8 +601,8 @@ class ALIGN_BIN(State):
 
     def Execute(self):
         if self.Arm.BlueBlobsSeen() is True:
-            self.Arm.Error('Blue', 'BIN')
-            if self.Arm.CenterOnBlob("Blue") == 1:
+            self.Arm.Error("BLUE", "BIN")
+            if self.Arm.CenterOnBlob("BLUE") == 1:
                 self.FSM.ToTransition("toDROPPED")
         else:
             self.Arm.UpdatePosition([0, 0, -2, 0])
