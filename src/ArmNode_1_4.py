@@ -366,7 +366,6 @@ class WAIT(State):
 
     def Enter(self):
         rospy.loginfo("Entering WAIT State")
-        self.Arm.GripDetPub()
 
     def Execute(self):
         if self.Arm.ServerState() == "BIN_AT_ARM":
