@@ -276,8 +276,8 @@ class IDLE(State):
         if self.Arm.AtTarget(IDLE_POSE) == 0:
             self.Arm.Move(IDLE_POSE, 0.1)
 
-        if self.Arm.ServerState() == "START":
-            self.FSM.ToTransition("to_WAIT_FOR_BASE")
+        if self.Arm.BaseState() == "FSM_WAIT_FOR_ACTION":
+            self.FSM.ToTransition("to_SEARCH_OBJ")
         # self.FSM.ToTransition("toSEARCH_OBJ")
 
         if rospy.get_time() > self.EntryTime + 1:
