@@ -211,7 +211,7 @@ class ArmNode():
         self.serverState = state.data
         # Reset to IDLE
         CS = self.FSM.curState.ReturnName()
-        if(self.serverState == "IDLE" | self.serverState == "RESET"):
+        if(self.serverState == "IDLE" or self.serverState == "RESET"):
             self.FSM.ToTransition("to_IDLE")
 
     def BaseStateCB(self, state):
