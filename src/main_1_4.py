@@ -22,6 +22,7 @@ if __name__ == "__main__":
 
         # STATE Initialisation
         fsm.AddState("IDLE", IDLE(fsm, rArm))
+        fsm.AddState("ARM_TO_OBJ", ARM_TO_OBJ(fsm, rArm))
         fsm.AddState("SEARCH_OBJ", SEARCH_OBJ(fsm, rArm))
         fsm.AddState("ALIGN_CAMERA", ALIGN_CAMERA(fsm, rArm))
         fsm.AddState("WAIT", WAIT(fsm, rArm))
@@ -34,6 +35,7 @@ if __name__ == "__main__":
 
         # STATE TRANSITION Initialisation
         fsm.AddTransition("to_IDLE", Transition("IDLE"))
+        fsm.AddTransition("to_ARM_TO_OBJ", Transition("ARM_TO_OBJ"))
         fsm.AddTransition("to_SEARCH_OBJ", Transition("SEARCH_OBJ"))
         fsm.AddTransition("to_ALIGN_CAMERA", Transition("ALIGN_CAMERA"))
         fsm.AddTransition("to_WAIT", Transition("WAIT"))

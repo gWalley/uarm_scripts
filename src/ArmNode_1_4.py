@@ -273,16 +273,33 @@ class IDLE(State):
         self.Arm.GripPub(0)
 
     def Execute(self):
-        ss = self.Arm.BaseState() == "FSM_WAIT_FOR_ACTION"
-        bs = self.Arm.ServerState() == "ARM_SEARCH"
-
-        if self.Arm.AtTarget(IDLE_POSE) == 0:
+        if self.Arm.AtTarget(IDLE_POSE) is False:
             self.Arm.Move(IDLE_POSE, 0.1)
-        elif ss & bs:
-            self.FSM.ToTransition("to_SEARCH_OBJ")
+        elif self.Arm.ServerState() == "ARM_TO_OBJ":
+            self.FSM.ToTransition("to_ARM_TO_OBJ")
 
         if rospy.get_time() > self.EntryTime + 1:
             self.Arm.GripDetPub()
+
+    def Exit(self):
+        rospy.loginfo("Exiting IDLE State")
+
+    def ReturnName(self):
+        return "IDLE"
+
+
+class ARM_TO_OBJ(State):
+
+    def __init__(self, FSM, Arm):
+        super(IDLE, self).__init__(FSM, Arm)
+        self.EntryTime = None
+
+    def Enter(self):
+        rospy.loginfo("Entering IDLE State")
+
+    def Execute(self):
+        if self.Arm.BaseState() == "FSM_WAIT_FOR_ACTION":
+            self.FSM.ToTransition("to_SEARCH_OBJ")
 
     def Exit(self):
         rospy.loginfo("Exiting IDLE State")
