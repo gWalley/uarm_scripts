@@ -9,7 +9,7 @@ from std_msgs.msg import String
 from cmvision_uarm.msg import Blobs
 
 BLOCK = [60, 50]
-BIN = [200, 200]
+BIN = [200, 220]
 CAM = [150, 120]
 XI = 0.005
 YI = -0.02
