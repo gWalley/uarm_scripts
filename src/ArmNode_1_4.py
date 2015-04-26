@@ -9,7 +9,7 @@ from std_msgs.msg import String
 from cmvision_uarm.msg import Blobs
 
 BLOCK = [60, 50]
-BIN = [200, 100]
+BIN = [200, 200]
 CAM = [150, 120]
 XI = 0.005
 YI = -0.02
@@ -211,7 +211,7 @@ class ArmNode():
         self.serverState = state.data
         # Reset to IDLE
         CS = self.FSM.curState.ReturnName()
-        if((self.serverState == "IDLE" or self.serverState == "RESET") and CS != "IDLE"):
+        if((self.serverState == "IDLE" or self.serverState == "RESET") and CS != "IDLE")-:
             self.FSM.ToTransition("to_IDLE")
 
     def BaseStateCB(self, state):
