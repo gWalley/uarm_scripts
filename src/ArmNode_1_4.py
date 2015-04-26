@@ -273,12 +273,13 @@ class IDLE(State):
         self.Arm.GripPub(0)
 
     def Execute(self):
+        ss = self.Arm.BaseState() == "FSM_WAIT_FOR_ACTION"
+        bs = self.Arm.ServerState() == "ARM_SEARCH"
+
         if self.Arm.AtTarget(IDLE_POSE) == 0:
             self.Arm.Move(IDLE_POSE, 0.1)
-
-        if self.Arm.BaseState() == "FSM_WAIT_FOR_ACTION":
+        elif ss & bs:
             self.FSM.ToTransition("to_SEARCH_OBJ")
-        # self.FSM.ToTransition("toSEARCH_OBJ")
 
         if rospy.get_time() > self.EntryTime + 1:
             self.Arm.GripDetPub()
@@ -303,17 +304,21 @@ class SEARCH_OBJ(State):
     def __init__(self, FSM, Arm):
         super(SEARCH_OBJ, self).__init__(FSM, Arm)
         self.search = False
+        self.EntryTime = None
 
     def Enter(self):
         rospy.loginfo("Entering SEARCH_OBJ State")
-        self.Arm.GripDetPub()
+        self.EntryTime = rospy.get_time()
 
     def Execute(self):
-        if self.Arm.AtTarget(SEARCH) is False:
-            self.Arm.Move(SEARCH, 0.1)
-
-        elif self.Arm.PinkBlobsSeen() is True:
-            self.FSM.ToTransition("to_ALIGN_CAMERA")
+        if rospy.get_time() < self.EntryTime + 2:
+            if self.Arm.AtTarget(HOME) is False:
+                self.Arm.Move(HOME, 0.1)
+        else:
+            if self.Arm.AtTarget(SEARCH) is False:
+                self.Arm.Move(SEARCH, 0.1)
+            elif self.Arm.PinkBlobsSeen() is True:
+                self.FSM.ToTransition("to_ALIGN_CAMERA")
 
     def Exit(self):
         rospy.loginfo("Exiting SEARCH_OBJ State")
@@ -337,10 +342,8 @@ class ALIGN_CAMERA(State):
 
     def Enter(self):
         rospy.loginfo("Entering ALIGN_CAMERA State")
-        self.Arm.GripDetPub()
 
     def Execute(self):
-        # if self.Arm.PinkBlobsSeen() is True:
         self.Arm.Error("PINK", "CAM")
         if self.Arm.CenterOnBlob("PINK") is True:
             self.FSM.ToTransition("to_WAIT")
@@ -394,10 +397,8 @@ class ALIGN_BLOCK(State):
 
     def Enter(self):
         rospy.loginfo("Entering ALIGN_BLOCK State")
-        self.Arm.GripDetPub()
 
     def Execute(self):
-        # if self.Arm.PinkBlobsSeen() is True:
         self.Arm.Error("PINK", "BLOCK")
         if self.Arm.CenterOnBlob("PINK") is True:
             self.FSM.ToTransition("to_APPROACH")
@@ -546,7 +547,7 @@ class DROPPED(State):
     def Execute(self):
         if self.Arm.AtTarget(HOME) is True:
             self.Arm.Move(HOME, 0.1)
-        if self.Arm.ServerState() == "BIN_TO_BASE":
+        elif self.Arm.ServerState() == "BIN_TO_BASE":
             self.FSM.ToTransition("to_IDLE")
 
     def Exit(self):
