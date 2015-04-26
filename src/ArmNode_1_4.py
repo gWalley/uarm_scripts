@@ -328,7 +328,7 @@ class SEARCH_OBJ(State):
         self.EntryTime = rospy.get_time()
 
     def Execute(self):
-        if rospy.get_time() < self.EntryTime + 2:
+        if rospy.get_time() < self.EntryTime + 3:
             if self.Arm.AtTarget(HOME) is False:
                 self.Arm.Move(HOME, 0.1)
         else:
