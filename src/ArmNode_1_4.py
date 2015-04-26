@@ -291,21 +291,21 @@ class IDLE(State):
 class ARM_TO_OBJ(State):
 
     def __init__(self, FSM, Arm):
-        super(IDLE, self).__init__(FSM, Arm)
+        super(ARM_TO_OBJ, self).__init__(FSM, Arm)
         self.EntryTime = None
 
     def Enter(self):
-        rospy.loginfo("Entering IDLE State")
+        rospy.loginfo("Entering ARM_TO_OBJ State")
 
     def Execute(self):
         if self.Arm.BaseState() == "FSM_WAIT_FOR_ACTION":
             self.FSM.ToTransition("to_SEARCH_OBJ")
 
     def Exit(self):
-        rospy.loginfo("Exiting IDLE State")
+        rospy.loginfo("Exiting ARM_TO_OBJ State")
 
     def ReturnName(self):
-        return "IDLE"
+        return "ARM_TO_OBJ"
 
 
 # ---------------------------------------------------------------
