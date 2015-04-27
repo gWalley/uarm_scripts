@@ -320,7 +320,6 @@ class SEARCH_OBJ(State):
 
     def __init__(self, FSM, Arm):
         super(SEARCH_OBJ, self).__init__(FSM, Arm)
-        self.search = False
         self.EntryTime = None
 
     def Enter(self):
