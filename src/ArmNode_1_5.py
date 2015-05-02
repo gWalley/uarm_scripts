@@ -59,8 +59,7 @@ class ArmNode():
         # Classwide Variable Init
         self.counter = 0
         self.atTarget = False
-        self.xError = 0.0
-        self.yError = 0.0
+        self.error = [0.0, 0.0]
         self.blobName = []
         self.blobX = []
         self.blobY = []
@@ -121,15 +120,15 @@ class ArmNode():
             flag = self.PinkBlobsSeen()
             lim = [7, 5]
 
-        inc[0] = clamp_p_or_n(YI * self.yError, 0.1, 20)
+        inc[0] = clamp_p_or_n(YI * self.error[1], 0.1, 20)
         inc[1] = 0
-        inc[2] = clamp_p_or_n(XI * self.xError, 0.1, 20)
+        inc[2] = clamp_p_or_n(XI * self.error[0], 0.1, 20)
         inc[3] = 0
 
-        error_small = (self.xError < lim[0] and self.xError > -lim[0]) and (
-            self.yError < lim[1] and self.yError > -lim[1])
+        error_s = (self.error[0] < lim[0] and self.error[0] > -lim[0]) and (
+            self.error[1] < lim[1] and self.error[1] > -lim[1])
 
-        if error_small and flag:
+        if error_s and flag:
             self.counter = self.counter + 1
 
             if self.counter == 10:
@@ -188,8 +187,8 @@ class ArmNode():
         elif name == "CAM":
             x = CAM[0]
             y = CAM[1]
-        self.xError = posx[indexOfMax] - x
-        self.yError = posy[indexOfMax] - y
+        self.error[0] = posx[indexOfMax] - x
+        self.error[1] = posy[indexOfMax] - y
 
     # Publisher Functions
     def JointPub(self):
