@@ -120,13 +120,16 @@ class ArmNode():
         if colour == "BLUE":
             flag = self.BlueBlobsSeen()
             lim = [14, 10]
+            speed = [0.0025, -0.01]
+
         elif colour == "PINK":
             flag = self.PinkBlobsSeen()
             lim = [7, 5]
+            speed = [0.005, -0.02]
 
-        inc[0] = clamp_p_or_n(YI * self.error[1], 0.1, 20)
+        inc[0] = clamp_p_or_n(speed[1] * self.error[1], 0.1, 20)
         inc[1] = 0
-        inc[2] = clamp_p_or_n(XI * self.error[0], 0.1, 20)
+        inc[2] = clamp_p_or_n(speed[0] * self.error[0], 0.1, 20)
         inc[3] = 0
 
         error_s = (self.error[0] < lim[0] and self.error[0] > -lim[0]) and (
