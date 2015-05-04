@@ -569,18 +569,19 @@ class APPROACH_BIN(State):
         self.initialPos = []
 
     def Enter(self):
+        self.lsPressed = False
         rospy.loginfo("Entering APPROACH_BIN State")
         self.initialPos = self.Arm.currentPosRnd
+        rospy.loginfo("Current Position:" + str(self.initialPos))
 
     def Execute(self):
         if self.lsPressed is True:
-            rospy.loginfo("APPROACH_BIN: Returning to original position")
-            self.Arm.Move(self.initialPos, 0.1)
-            if self.Arm.AtTarget(self.initialPos) is True:
+            rospy.loginfo("APPROACH_BIN: Dropped, Returning to original position")
+            if self.Arm.AtTarget(self.initialPos) is False:
                 rospy.sleep(0.5)
                 self.FSM.ToTransition("to_DROPPED")
         else:
-            rospy.loginfo("APPROACH_BIN: Approaching Bin")
+            # rospy.loginfo("APPROACH_BIN: Approaching Bin")
             inc = [-0.5, -2.5, 0.0, 0.0]
             self.Arm.UpdatePosition(inc)
 
