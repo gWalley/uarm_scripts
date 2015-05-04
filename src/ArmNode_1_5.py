@@ -581,7 +581,7 @@ class APPROACH_BIN(State):
                 self.FSM.ToTransition("to_DROPPED")
         else:
             rospy.loginfo("APPROACH_BIN: Approaching Bin")
-            inc = [0.1, -2.5, 0.0, 0.0]
+            inc = [-0.5, -2.5, 0.0, 0.0]
             self.Arm.UpdatePosition(inc)
 
         if self.Arm.LimitSw() is True:
