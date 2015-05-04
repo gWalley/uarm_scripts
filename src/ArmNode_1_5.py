@@ -15,7 +15,7 @@ XI = 0.005
 YI = -0.02
 IDLE_POSE = [0.0, 0.0, 90.0, 0.0]
 HOME = [0.0, 0.0, 0.0, 0.0]
-SEARCH = [100.0, 150.0, 0.0, 0.0]
+SEARCH = [120.0, 150.0, 0.0, 0.0]
 MAX_JOINTS = [210, 150, 90, 90]
 MIN_JOINTS = [0, -150, -90, -90]
 RATE = 50
@@ -83,14 +83,11 @@ class ArmNode():
             else:
                 inc[i] = clamp_p_or_n(
                     (targ[i] - self.currentPosRnd[i]) * speed, 0.01, 10)
-        # rospy.loginfo(
-        #     " Inc: " + str(inc) + "   Current Pos: " + str(
-        #         self.currentPosRnd))
 
         # Update position with calculated increments
         self.UpdatePosition(inc)
 
-    # Checks if at target
+    # Checks if controller has reached target positon
     def AtTarget(self, targ):
         if self.currentPosRnd == targ:
             if self.atTarget is False:
@@ -103,20 +100,26 @@ class ArmNode():
 
     # Given an incremental change, adjusts current position
     def UpdatePosition(self, inc):
-        # update incrementally
+        # Update each value incrementally
         for i in range(4):
             self.currentPos[i] = clamp(
-                self.currentPos[i] + inc[i],
-                MIN_JOINTS[i], MAX_JOINTS[i])
+                self.currentPos[i] + inc[i],  # Add inc to current position
+                MIN_JOINTS[i], MAX_JOINTS[i])  # Clamp between min and max
+
+            if i == 3:
+                self.currentPos[i] = -self.currentPos[2]
+            # Round current position to send to arm as integer
             self.currentPosRnd[i] = round(self.currentPos[i])
 
     # Centers on target location according to current error value
-    def CenterOnBlob(self, name):
+    def CenterOnBlob(self, colour):
         inc = [0.0, 0.0, 0.0, 0.0]
-        if name == "BLUE":
+        # Parameter colour determines which blob to focus on,
+        # and required margin of error
+        if colour == "BLUE":
             flag = self.BlueBlobsSeen()
             lim = [14, 10]
-        elif name == "PINK":
+        elif colour == "PINK":
             flag = self.PinkBlobsSeen()
             lim = [7, 5]
 
@@ -539,16 +542,58 @@ class ALIGN_BIN(State):
         if self.Arm.BlueBlobsSeen() is True:
             self.Arm.Error("BLUE", "BIN")
             if self.Arm.CenterOnBlob("BLUE") is True:
-                self.FSM.ToTransition("to_DROPPED")
+                self.Arm.GripPub(0)
+                rospy.sleep(1)
+                self.FSM.ToTransition("to_APPROACH_BIN")
         else:
             self.Arm.UpdatePosition([0, 0, -2, 0])
 
     def Exit(self):
-        rospy.sleep(0.5)
         rospy.loginfo("Exiting ALIGN_BIN State")
 
     def ReturnName(self):
         return "ALIGN_BIN"
+
+
+# ---------------------------------------------------------------
+# State: APPROACH_BIN
+# ---------------------------------------------------------------
+# PrevState: ALIGN_BIN
+# NextState: DROPPED
+# ---------------------------------------------------------------
+#
+class APPROACH_BIN(State):
+    def __init__(self, FSM, Arm):
+        super(APPROACH_BIN, self).__init__(FSM, Arm)
+        self.lsPressed = False
+        self.initialPos = []
+
+    def Enter(self):
+        rospy.loginfo("Entering APPROACH_BIN State")
+        self.initialPos = self.Arm.currentPosRnd
+
+    def Execute(self):
+        if self.lsPressed is True:
+            self.Arm.Move(self.initialPos, 0.1)
+            if self.Arm.AtTarget(self.initialPos) is True:
+                rospy.sleep(0.5)
+                self.FSM.ToTransition("to_DROPPED")
+        else:
+            inc = [0.1, -2.5, 0.0, 0.0]
+            self.Arm.UpdatePosition(inc)
+
+        if self.Arm.LimitSw() is True:
+            if self.lsPressed is False:
+                self.Arm.GripPub(0)
+                rospy.sleep(0.5)
+            else:
+                self.lsPressed = True
+
+    def Exit(self):
+        rospy.loginfo("Exiting APPROACH_BIN State")
+
+    def ReturnName(self):
+        return "APPROACH_BIN"
 
 
 # ---------------------------------------------------------------
@@ -565,7 +610,6 @@ class DROPPED(State):
 
     def Enter(self):
         rospy.loginfo("Entering DROPPED State")
-        rospy.sleep(1)
 
     def Execute(self):
         if self.Arm.AtTarget(HOME) is True:
