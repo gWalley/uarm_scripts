@@ -584,12 +584,11 @@ class APPROACH_BIN(State):
             inc = [-0.5, -2.5, 0.0, 0.0]
             self.Arm.UpdatePosition(inc)
 
-        if self.Arm.LimitSw() is True:
+        if (self.Arm.LimitSw() is True) and (self.lsPressed is False):
             rospy.loginfo("APPROACH_BIN: Block pressed down")
             if self.lsPressed is False:
                 self.Arm.GripPub(0)
                 rospy.sleep(0.5)
-            else:
                 self.lsPressed = True
 
     def Exit(self):
