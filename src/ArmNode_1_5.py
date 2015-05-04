@@ -542,8 +542,6 @@ class ALIGN_BIN(State):
         if self.Arm.BlueBlobsSeen() is True:
             self.Arm.Error("BLUE", "BIN")
             if self.Arm.CenterOnBlob("BLUE") is True:
-                self.Arm.GripPub(0)
-                rospy.sleep(1)
                 self.FSM.ToTransition("to_APPROACH_BIN")
         else:
             self.Arm.UpdatePosition([0, 0, -2, 0])
@@ -574,15 +572,18 @@ class APPROACH_BIN(State):
 
     def Execute(self):
         if self.lsPressed is True:
+            rospy.loginfo("APPROACH_BIN: Returning to original position")
             self.Arm.Move(self.initialPos, 0.1)
             if self.Arm.AtTarget(self.initialPos) is True:
                 rospy.sleep(0.5)
                 self.FSM.ToTransition("to_DROPPED")
         else:
+            rospy.loginfo("APPROACH_BIN: Approaching Bin")
             inc = [0.1, -2.5, 0.0, 0.0]
             self.Arm.UpdatePosition(inc)
 
         if self.Arm.LimitSw() is True:
+            rospy.loginfo("APPROACH_BIN: Block pressed down")
             if self.lsPressed is False:
                 self.Arm.GripPub(0)
                 rospy.sleep(0.5)
