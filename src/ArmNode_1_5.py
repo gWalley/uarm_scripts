@@ -106,7 +106,7 @@ class ArmNode():
                 self.currentPos[i] + inc[i],  # Add inc to current position
                 MIN_JOINTS[i], MAX_JOINTS[i])  # Clamp between min and max
 
-            if i == 3 & self.FSM.curState.ReturnName() != "IDLE":
+            if (i == 3) and (self.FSM.curState.ReturnName() != "IDLE"):
                 self.currentPos[i] = -self.currentPos[2]
             # Round current position to send to arm as integer
             self.currentPosRnd[i] = round(self.currentPos[i])
