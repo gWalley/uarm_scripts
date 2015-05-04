@@ -60,6 +60,7 @@ class ArmNode():
         self.counter = 0
         self.atTarget = False
         self.error = [0.0, 0.0]
+        self.prevError = [0.0, 0.0]
         self.blobName = []
         self.blobX = []
         self.blobY = []
@@ -541,10 +542,11 @@ class ALIGN_BIN(State):
     def Execute(self):
         if self.Arm.BlueBlobsSeen() is True:
             self.Arm.Error("BLUE", "BIN")
-            if self.Arm.CenterOnBlob("BLUE") is True:
-                self.FSM.ToTransition("to_APPROACH_BIN")
         else:
-            self.Arm.UpdatePosition([0, 0, -2, 0])
+            self.Arm.prevError = self.Arm.error
+            # self.Arm.UpdatePosition([0, 0, -2, 0])
+        if self.Arm.CenterOnBlob("BLUE") is True:
+            self.FSM.ToTransition("to_APPROACH_BIN")
 
     def Exit(self):
         rospy.loginfo("Exiting ALIGN_BIN State")
