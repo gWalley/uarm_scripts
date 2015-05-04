@@ -485,7 +485,7 @@ class PICK_UP(State):
 
     def Execute(self):
         if self.Arm.AtTarget(SEARCH) is True:
-            self.FSM.ToTransition("to_WAIT")
+            self.FSM.ToTransition("to_VERIFY")
         else:
             self.Arm.Move(SEARCH, 0.1)
 
@@ -494,6 +494,32 @@ class PICK_UP(State):
 
     def ReturnName(self):
         return "PICK_UP"
+
+
+# ---------------------------------------------------------------
+# State: VERIFY
+# ---------------------------------------------------------------
+# PrevState: ALIGN_CAMERA
+# NextState: sd
+# ---------------------------------------------------------------
+# WAITing
+class VERIFY(State):
+
+    def __init__(self, FSM, Arm):
+        super(VERIFY, self).__init__(FSM, Arm)
+
+    def Enter(self):
+        rospy.loginfo("Entering VERIFY State")
+
+    def Execute(self):
+        if self.Arm.ServerState() == "ARM_DROPPING":
+            self.FSM.ToTransition("to_LOCATE_BIN")
+
+    def Exit(self):
+        rospy.loginfo("Exiting VERIFY State")
+
+    def ReturnName(self):
+        return "VERIFY"
 
 
 # ---------------------------------------------------------------
@@ -566,18 +592,16 @@ class APPROACH_BIN(State):
     def __init__(self, FSM, Arm):
         super(APPROACH_BIN, self).__init__(FSM, Arm)
         self.lsPressed = False
-        self.initialPos = []
 
     def Enter(self):
         self.lsPressed = False
         rospy.loginfo("Entering APPROACH_BIN State")
-        self.initialPos = self.Arm.currentPosRnd
-        rospy.loginfo("Current Position:" + str(self.initialPos))
 
     def Execute(self):
         if self.lsPressed is True:
-            rospy.loginfo("APPROACH_BIN: Dropped, Returning to original position")
-            if self.Arm.AtTarget(self.initialPos) is False:
+            if self.Arm.AtTarget(SEARCH) is False:
+                self.Arm.Move(SEARCH, 0.1)
+            else:
                 rospy.sleep(0.5)
                 self.FSM.ToTransition("to_DROPPED")
         else:
