@@ -8,14 +8,14 @@ from std_msgs.msg import Bool
 from std_msgs.msg import String
 from cmvision_uarm.msg import Blobs
 
-BLOCK = [60, 50]
-BIN = [200, 220]
+BLOCK = [100, 50]
+BIN = [240, 220]
 CAM = [150, 120]
 XI = 0.005
 YI = -0.02
 IDLE_POSE = [0.0, 0.0, 90.0, 0.0]
-HOME = [0.0, 0.0, 0.0, 0.0]
-SEARCH = [120.0, 150.0, 0.0, 0.0]
+HOME_POSE = [0.0, 0.0, 0.0, 0.0]
+SEARCH_POSE = [120.0, 150.0, 0.0, 0.0]
 MAX_JOINTS = [210, 150, 90, 90]
 MIN_JOINTS = [0, -150, -90, -90]
 RATE = 50
@@ -60,7 +60,6 @@ class ArmNode():
         self.counter = 0
         self.atTarget = False
         self.error = [0.0, 0.0]
-        self.prevError = [0.0, 0.0]
         self.blobName = []
         self.blobX = []
         self.blobY = []
@@ -73,8 +72,9 @@ class ArmNode():
         self.baseState = None
         self.FSM = FSM
 
-    # Given a target and speed, will calculate movement required to
-    # reach a given target
+    # Move(targ, speed):
+    #   - Given a target and speed, will calculate movement required to
+    #     reach a given target
     def Move(self, targ, speed=INC_RATE):
         inc = [0.0, 0.0, 0.0, 0.0]
         # For all 4 axis, calculate incremental change
@@ -88,7 +88,9 @@ class ArmNode():
         # Update position with calculated increments
         self.UpdatePosition(inc)
 
-    # Checks if controller has reached target positon
+    # AtTarget(targ):
+    #   - Checks if current working position of controller is equal to
+    #     target positon
     def AtTarget(self, targ):
         if self.currentPosRnd == targ:
             if self.atTarget is False:
@@ -99,7 +101,8 @@ class ArmNode():
             self.atTarget = False
             return self.atTarget
 
-    # Given an incremental change, adjusts current position
+    # UpdatePosition(inc):
+    #   - Given an incremental change, adjusts current position
     def UpdatePosition(self, inc):
         # Update each value incrementally
         for i in range(4):
@@ -112,7 +115,11 @@ class ArmNode():
             # Round current position to send to arm as integer
             self.currentPosRnd[i] = round(self.currentPos[i])
 
-    # Centers on target location according to current error value
+    # CenterOnBlob(colour):
+    #   - Error() function should be called before this function to determine
+    #     error value to be used
+    #   - Centers on target location according to current error value of
+    #     largest blob
     def CenterOnBlob(self, colour):
         inc = [0.0, 0.0, 0.0, 0.0]
         # Parameter colour determines which blob to focus on,
@@ -147,92 +154,139 @@ class ArmNode():
             self.UpdatePosition(inc)
             return False
 
-    # Determines if a pink blob is seen
+    # PinkBlobsSeen():
+    #   - Determines if a pink blob is seen
     def PinkBlobsSeen(self):
         for i in range(len(self.blobName)):
+            # Are there any pink blobs with area greater than 1000?
             if self.blobName[i] == "PINK" and self.blobAreas[i] > 1000:
                 return True
         return False
 
-    # Determines if a blue blob is seen
+    # BlueBlobsSeen():
+    #   - Determines if a blue blob is seen
     def BlueBlobsSeen(self):
         for i in range(len(self.blobName)):
+            # Are there any blue blobs with area greater than 1000?
             if self.blobName[i] == "BLUE" and self.blobAreas[i] > 1000:
                 return True
         return False
 
+    # ServerState():
+    #   - Use to read the serverState Variable
     def ServerState(self):
         return self.serverState
 
+    # BaseState():
+    #   - Use to read the baseState variable
     def BaseState(self):
         return self.baseState
 
+    # LimitSw():
+    #   - Use to read the limitSw variable
     def LimitSw(self):
         return self.limitSw
 
-    # Determines error when ALIGNing on block
+    # # # # IMPROVEMENT POSSIBLE: # # # #
+    # Call error from center on blob
+    # function, or merge them
+    # # # # # # # # # # # # # # # # # # #
+    # Error(colour, name):
+    #   - Determines error when aligning on block
     def Error(self, colour, name):
+        # Initialise variables
         areas = []
         posx = []
         posy = []
-        x = 0
-        y = 0
+        targ = []
 
+        # Find all blobs of the desired colour
         for i in range(len(self.blobName)):
             if self.blobName[i] == colour:
                 areas.append(self.blobAreas[i])
                 posx.append(self.blobX[i])
                 posy.append(self.blobY[i])
+        # Determine largest of those blobs
         indexOfMax = areas.index(max(areas))
 
+        # Determine target location as chosen by user
         if name == "BIN":
-            x = BIN[0]
-            y = BIN[1]
+            targ = BIN
         elif name == "BLOCK":
-            x = BLOCK[0]
-            y = BLOCK[1]
+            targ = BLOCK
         elif name == "CAM":
-            x = CAM[0]
-            y = CAM[1]
-        self.error[0] = posx[indexOfMax] - x
-        self.error[1] = posy[indexOfMax] - y
+            targ = CAM
+
+        # Calculate error by determining difference between current
+        # location of blob and desired
+        self.error[0] = posx[indexOfMax] - targ[0]
+        self.error[1] = posy[indexOfMax] - targ[1]
 
     # Publisher Functions
+    #  - When called, these functions will publish data to relevant topics
+
+    # JointPub(): Publishes the rounded working position of the arm.
     def JointPub(self):
         self.joint_commands_pub.publish(data=self.currentPosRnd)
 
+    # GripPub(0 or 1):
+    #   - 1: activates pump.
+    #   - 0: deactivates pump
     def GripPub(self, cmd):
         self.gripper_commands_pub.publish(data=cmd)
 
+    # GripDetPub(): Used to disable both pump and valve
+    #   - Should be called after pump has been disabled to disable the valve
+    #   - This turns off the valve, closing it. Therefore, when using GripPub()
+    #     this function should be called after some sleep period to allow the
+    #     tube to normalize pressure
     def GripDetPub(self):
         self.gripper_det_pub.publish(data=1)
 
+    # CurrentStatePub(): Publish current state of uArm Controller state machine
     def CurrentStatePub(self):
         self.cur_state_pub.publish(data=self.FSM.curState.ReturnName())
 
     # Callbacks for subscriptions
     def B4CB(self, b4):
-        pass
+        pass  # Currently unused
 
+    # B7CB(): Callback for Button 7 on the arm
+    #   - Forced reset of state machine incase of problems.
     def B7CB(self, b7):
         if b7.data is True:
             self.FSM.ToTransition("to_IDLE")
 
+    # LimitSwCB(): Callback for limit switch on arm
+    #   - When arm pushes down on something, button is pressed and limit switch
+    #     is activated. This is stored in self.limitSw
     def LimitSwCB(self, ls):
         self.limitSw = ls.data
 
+    # ServerStateCB(): Callback for when server state is updated
+    #   - When server state is published, value is saved in self.serverState
+    #   - When server transitions to IDLE or RESET state, as long as arm is
+    #     not in IDLE, arm is also transitioned to IDLE
     def ServerStateCB(self, state):
         self.serverState = state.data
         # Reset to IDLE
         CS = self.FSM.curState.ReturnName()
-        if((self.serverState == "IDLE" or self.serverState == "RESET") and CS != "IDLE"):
+        if((self.serverState == "IDLE" or self.serverState == "RESET")
+           and CS != "IDLE"):
             self.FSM.ToTransition("to_IDLE")
 
+    # BaseStateCB(): Callback for when arm base state is updated
+    #   - When base state is published, value is saved in self.baseState
     def BaseStateCB(self, state):
         if state.data != self.baseState:
             self.baseState = state.data
-            rospy.loginfo(self.baseState)
+            rospy.loginfo("BASE STATE TRANISIONING TO " + self.baseState)
 
+    # ObjPositionCB(): Callback for /uarm/blobs topic, outputted from CMVision
+    #   - Updates arrays storing blob info so that the array contains only
+    #     blobs that can currently be seen.
+    #   - Due to the number of blobs being unknown, the array is initialised
+    #     to 0 size and blob data is appended to array.
     def ObjPositionCB(self, objPos):
         self.blobName = []
         self.blobX = []
@@ -242,18 +296,10 @@ class ArmNode():
 
         if objPosLength > 0:
             for i in range(objPosLength):
-                # ---------------------------------------------------------
-                # Position of blobs
-                try:
-                    self.blobName[i] = objPos.blobs[i].name
-                    self.blobX[i] = objPos.blobs[i].x
-                    self.blobY[i] = objPos.blobs[i].y
-                    self.blobAreas[i] = objPos.blobs[i].area
-                except:
-                    self.blobName.append(objPos.blobs[i].name)
-                    self.blobX.append(objPos.blobs[i].x)
-                    self.blobY.append(objPos.blobs[i].y)
-                    self.blobAreas.append(objPos.blobs[i].area)
+                self.blobName.append(objPos.blobs[i].name)
+                self.blobX.append(objPos.blobs[i].x)
+                self.blobY.append(objPos.blobs[i].y)
+                self.blobAreas.append(objPos.blobs[i].area)
 
 
 # Clamps value between two limits
@@ -272,9 +318,11 @@ def clamp_p_or_n(n, minN, maxN):
 # State: IDLE
 # ---------------------------------------------------------------
 # PrevState: N/A
-# NextState:
+# NextState: ARM_TO_OBJ
 # ---------------------------------------------------------------
-#
+# - IDLE state used to return arm to its IDLE_POSE.
+# - Pump is disabled on entry, and after 1 second, the valve is
+#   also disabled
 class IDLE(State):
 
     def __init__(self, FSM, Arm):
@@ -302,11 +350,20 @@ class IDLE(State):
         return "IDLE"
 
 
+# ---------------------------------------------------------------
+# State: ARM_TO_OBJ
+# ---------------------------------------------------------------
+# PrevState: IDLE
+# NextState: SERACH_OBJ
+# ---------------------------------------------------------------
+# - When base is navigating to object, Arm is in ARM_TO_OBJ state
+# - The state is a dummy state to prevent issues with server
+#   transitioning when it shouldn't
+# COULD POTENTIALLY BE REMOVED
 class ARM_TO_OBJ(State):
 
     def __init__(self, FSM, Arm):
         super(ARM_TO_OBJ, self).__init__(FSM, Arm)
-        self.EntryTime = None
 
     def Enter(self):
         rospy.loginfo("Entering ARM_TO_OBJ State")
@@ -325,11 +382,15 @@ class ARM_TO_OBJ(State):
 # ---------------------------------------------------------------
 # State: SEARCH_OBJ
 # ---------------------------------------------------------------
-# PrevState: WAIT_FOR_POSEect
+# PrevState: WAIT_FOR_POS
 # NextState: ALIGN_CAMERA
 # ---------------------------------------------------------------
-# As Arm_Base is rotating, look for the object.
-# When object is seen, transition to ALIGN_CAMERA
+# - As Arm_Base is rotating, extends arm to look for object.
+# - Object can be assumed to be roughly 180 degrees from arm
+#   so the arm does not fully extend for 3 seconds.
+# - When object is seen, transition to ALIGN_CAMERA
+# THIS COULD BE MODIFYED TO PREVENT ARM HITTING WALLS:
+# However, currently seems to not have this issue.
 class SEARCH_OBJ(State):
 
     def __init__(self, FSM, Arm):
@@ -342,11 +403,11 @@ class SEARCH_OBJ(State):
 
     def Execute(self):
         if rospy.get_time() < self.EntryTime + 3:
-            if self.Arm.AtTarget(HOME) is False:
-                self.Arm.Move(HOME, 0.1)
+            if self.Arm.AtTarget(HOME_POSE) is False:
+                self.Arm.Move(HOME_POSE, 0.1)
         else:
-            if self.Arm.AtTarget(SEARCH) is False:
-                self.Arm.Move(SEARCH, 0.1)
+            if self.Arm.AtTarget(SEARCH_POSE) is False:
+                self.Arm.Move(SEARCH_POSE, 0.1)
             elif self.Arm.PinkBlobsSeen() is True:
                 self.FSM.ToTransition("to_ALIGN_CAMERA")
 
@@ -361,10 +422,10 @@ class SEARCH_OBJ(State):
 # State: ALIGN_CAMERA
 # ---------------------------------------------------------------
 # PrevState: SEARCH_OBJ
-# NextState: WAITUser
+# NextState: WAIT
 # ---------------------------------------------------------------
-# ALIGNs the camera to object in order to take a picture for
-# for the user to see the object
+# - ALIGNs the camera to object in order to take a picture for
+#   for the user to see the object
 class ALIGN_CAMERA(State):
 
     def __init__(self, FSM, Arm):
@@ -374,6 +435,7 @@ class ALIGN_CAMERA(State):
         rospy.loginfo("Entering ALIGN_CAMERA State")
 
     def Execute(self):
+        # Calculate error for CenterOnBlob function
         self.Arm.Error("PINK", "CAM")
         if self.Arm.CenterOnBlob("PINK") is True:
             self.FSM.ToTransition("to_WAIT")
@@ -389,9 +451,10 @@ class ALIGN_CAMERA(State):
 # State: WAIT
 # ---------------------------------------------------------------
 # PrevState: ALIGN_CAMERA
-# NextState: WAIT
+# NextState: ALIGN_BLOCK
 # ---------------------------------------------------------------
-# WAITing
+# - Once user has made decision to pick up block, transitions to
+#   ALIGN_BLOCK state
 class WAIT(State):
 
     def __init__(self, FSM, Arm):
@@ -403,8 +466,6 @@ class WAIT(State):
     def Execute(self):
         if self.Arm.ServerState() == "BIN_AT_ARM":
             self.FSM.ToTransition("to_ALIGN_BLOCK")
-        elif self.Arm.ServerState() == "ARM_DROPPING":
-            self.FSM.ToTransition("to_LOCATE_BIN")
 
     def Exit(self):
         rospy.loginfo("Exiting WAIT State")
@@ -419,7 +480,7 @@ class WAIT(State):
 # PrevState: WAIT
 # NextState: APPROACH
 # ---------------------------------------------------------------
-#
+# - Aligns to block in order to pick it up
 class ALIGN_BLOCK(State):
 
     def __init__(self, FSM, Arm):
@@ -487,10 +548,10 @@ class PICK_UP(State):
         rospy.loginfo("Entering PICK_UP State")
 
     def Execute(self):
-        if self.Arm.AtTarget(SEARCH) is True:
+        if self.Arm.AtTarget(SEARCH_POSE) is True:
             self.FSM.ToTransition("to_VERIFY")
         else:
-            self.Arm.Move(SEARCH, 0.1)
+            self.Arm.Move(SEARCH_POSE, 0.1)
 
     def Exit(self):
         rospy.loginfo("Exiting PICK_UP State")
@@ -541,8 +602,8 @@ class LOCATE_BIN(State):
         rospy.loginfo("Entering LOCATE_BIN State")
 
     def Execute(self):
-        if self.Arm.AtTarget(SEARCH) is False:
-            self.Arm.Move(SEARCH, 0.1)
+        if self.Arm.AtTarget(SEARCH_POSE) is False:
+            self.Arm.Move(SEARCH_POSE, 0.1)
         elif self.Arm.BlueBlobsSeen() is True:
             self.FSM.ToTransition("to_ALIGN_BIN")
 
@@ -592,6 +653,7 @@ class ALIGN_BIN(State):
 # ---------------------------------------------------------------
 #
 class APPROACH_BIN(State):
+
     def __init__(self, FSM, Arm):
         super(APPROACH_BIN, self).__init__(FSM, Arm)
         self.lsPressed = False
@@ -602,8 +664,8 @@ class APPROACH_BIN(State):
 
     def Execute(self):
         if self.lsPressed is True:
-            if self.Arm.AtTarget(SEARCH) is False:
-                self.Arm.Move(SEARCH, 0.1)
+            if self.Arm.AtTarget(SEARCH_POSE) is False:
+                self.Arm.Move(SEARCH_POSE, 0.1)
             else:
                 rospy.sleep(0.5)
                 self.FSM.ToTransition("to_DROPPED")
@@ -642,8 +704,8 @@ class DROPPED(State):
         rospy.loginfo("Entering DROPPED State")
 
     def Execute(self):
-        if self.Arm.AtTarget(HOME) is True:
-            self.Arm.Move(HOME, 0.1)
+        if self.Arm.AtTarget(HOME_POSE) is True:
+            self.Arm.Move(HOME_POSE, 0.1)
         elif self.Arm.ServerState() == "BIN_TO_BASE":
             self.FSM.ToTransition("to_IDLE")
 

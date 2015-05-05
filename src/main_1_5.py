@@ -39,7 +39,7 @@ if __name__ == "__main__":
         fsm.AddTransition("to_ALIGN_BLOCK",  Transition("ALIGN_BLOCK"))
         fsm.AddTransition("to_APPROACH",     Transition("APPROACH"))
         fsm.AddTransition("to_PICK_UP",      Transition("PICK_UP"))
-        fsm.AddTransition("to_VERIFY", Transition("VERIFY"))
+        fsm.AddTransition("to_VERIFY",       Transition("VERIFY"))
         fsm.AddTransition("to_LOCATE_BIN",   Transition("LOCATE_BIN"))
         fsm.AddTransition("to_ALIGN_BIN",    Transition("ALIGN_BIN"))
         fsm.AddTransition("to_APPROACH_BIN", Transition("APPROACH_BIN"))
