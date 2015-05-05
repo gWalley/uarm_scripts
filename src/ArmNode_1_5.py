@@ -387,7 +387,7 @@ class ARM_TO_OBJ(State):
 # ---------------------------------------------------------------
 # - As Arm_Base is rotating, extends arm to look for object.
 # - Object can be assumed to be roughly 180 degrees from arm
-#   so the arm does not fully extend for 3 seconds.
+#   so the arm does not fully extend for 3.3 seconds.
 # - When object is seen, transition to ALIGN_CAMERA
 # THIS COULD BE MODIFYED TO PREVENT ARM HITTING WALLS:
 # However, currently seems to not have this issue.
@@ -402,7 +402,7 @@ class SEARCH_OBJ(State):
         self.EntryTime = rospy.get_time()
 
     def Execute(self):
-        if rospy.get_time() < self.EntryTime + 3:
+        if rospy.get_time() < self.EntryTime + 3.3:
             if self.Arm.AtTarget(HOME_POSE) is False:
                 self.Arm.Move(HOME_POSE, 0.1)
         else:
