@@ -1,4 +1,0 @@
-<launch>
-    <node name="arm_bot_control_node" pkg="uarm_scripts" type="ArmBotMain.py"/>
-    <node name="arm_client_node" pkg="client_node" type="arm_client_node.py"/>
-</launch>
