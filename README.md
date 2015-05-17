@@ -1,6 +1,7 @@
 The files contained in this project allow the uFactory uArm to be used with ROS, to carry out coordinated tasks with other robots.  
 Launch packages using launch file:  
   - roslaunch uarm_scripts uarm.launch  
+  
 Run main:  
   - rosrun uarm_scripts main_1_5.py  
   
